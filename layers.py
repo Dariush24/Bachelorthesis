@@ -172,23 +172,24 @@ class FCLayer(object):
     self.output_size = output_size
     self.batch_size = batch_size
     self.learning_rate = learning_rate
-    self.f = f
-    self.df = df
+    self.f = f #activation function
+    self.df = df #derivative of activation function, in this case relu_deriv
     self.device = device
     self.weights = torch.empty([self.input_size,self.output_size]).normal_(mean=0.0,std=0.05).to(self.device)
 
   def forward(self,x):
-    self.inp = x.clone()
-    self.activations = torch.matmul(self.inp, self.weights)
-    return self.f(self.activations)
+    self.inp = x.clone() #inp = ([64, 3, 32, 32])
+    self.activations = torch.matmul(self.inp, self.weights)  #neuron hi = w*inp in matrix
+    return self.f(self.activations) #f is the activation function
 
   def backward(self,e):
-    self.fn_deriv = self.df(self.activations)
-    out = torch.matmul(e * self.fn_deriv, self.weights.T)
-    return torch.clamp(out,-50,50)
+    self.fn_deriv = self.df(self.activations) #df is derivative of activation function and activations is the pre-activation: xW+b
+    torch.set_printoptions(threshold=float('inf'))  # Disable truncation
+    out = torch.matmul(e * self.fn_deriv, self.weights.T) #matrix multiplication (e*fn_deriv)*weights
+    return torch.clamp(out,-50,50) #clamp forces to have a boundary
 
   def update_weights(self,e,update_weights=False,sign_reverse=False):
-    self.fn_deriv = self.df(self.activations)
+    self.fn_deriv = self.df(self.activations) #derivative with w*values
     dw = torch.matmul(self.inp.T, e * self.fn_deriv)
     if update_weights:
       if sign_reverse==True:

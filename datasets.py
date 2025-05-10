@@ -3,8 +3,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+import os
 import torchvision
 import torchvision.transforms as transforms
+from torchvision import datasets
+from torch.utils.data import DataLoader
+from torchvision.datasets import ImageFolder
+
 from utils import *
 
 def imshow(img):
@@ -13,11 +18,17 @@ def imshow(img):
     plt.imshow(np.transpose(npimg, (1, 2, 0)))
     plt.show()
 
+
 def show_dataset(dataset):
+    classes = ['airplane', 'automobile', 'bird', 'cat', 'deer',
+               'dog', 'frog', 'horse', 'ship', 'truck']
+
     images, labels = dataset[0]
+
     print("IMAGES: ", images.shape)
     print("LABELS: ", labels.shape)
-    print(onehot(labels))
+
+    #print(onehot(labels, vocab_size=30))
     # show images
     imshow(torchvision.utils.make_grid(images))
     # print labels
@@ -27,15 +38,23 @@ def get_cnn_dataset(dataset, batch_size):
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5))])
     if dataset == "cifar":
         trainset = torchvision.datasets.CIFAR10(root='./cifar_data', train=True,
-                                                download=False, transform=transform)
+                                                download=True, transform=transform)
+
+
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
                                           shuffle=True)
+
+
         train_data = list(iter(trainloader))
+
+
+
         testset = torchvision.datasets.CIFAR10(root='./cifar_data', train=False,
-                                               download=False, transform=transform)
+                                               download=True, transform=transform)
         testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
                                           shuffle=True)
         test_data = list(iter(testloader))
+
     elif dataset == "cifar100":
         trainset = torchvision.datasets.CIFAR100(root='./cifar100_data', train=True,
                                                 download=False, transform=transform)
@@ -47,14 +66,15 @@ def get_cnn_dataset(dataset, batch_size):
         testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
                                           shuffle=True)
         test_data = list(iter(testloader))
+
     elif dataset == "svhn":
         trainset = torchvision.datasets.SVHN(root='./svhn_data', split='train',
-                                                download=False, transform=transform)
+                                                download=True, transform=transform)
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
                                           shuffle=True)
         train_data = list(iter(trainloader))
         testset = torchvision.datasets.SVHN(root='./svhn_data', split='test',
-                                               download=False, transform=transform)
+                                               download=True, transform=transform)
         testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
                                           shuffle=True)
         test_data = list(iter(testloader))
@@ -70,6 +90,52 @@ def get_cnn_dataset(dataset, batch_size):
         testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
                                           shuffle=True)
         test_data = list(iter(testloader))
+    elif dataset == "coil20":
+
+        data_dir = r"C:\Users\dariu\Desktop\Studium\Vorlesungen und Übungsblätter\10.Semester\Bachelorthesis\dataset\coil-20-proc\coil-20-proc"
+
+
+        transform = transforms.Compose([
+            #transforms.Grayscale(),  # Single channel grayscale
+            transforms.Grayscale(num_output_channels=1),  # Single channel grayscale
+            transforms.Resize((128, 128)),  # Resize (if needed)
+            transforms.ToTensor()  # Convert to tensor [0, 1]
+        ])
+
+        dataset = datasets.ImageFolder(root=data_dir, transform=transform)
+
+        #dataset = datasets.ImageFolder(root=data_dir, transform=transform)
+
+        # Optional: split into train/test
+        train_size = int(0.8 * len(dataset))
+        test_size = len(dataset) - train_size
+
+
+        train_set, test_set = torch.utils.data.random_split(dataset, [train_size, test_size])
+
+
+        trainloader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True)
+        train_data = list(iter(trainloader))
+
+        # Assuming train_data is a list of batches, and each batch is a tuple (image, label)
+        image, label = train_data[0]  # Get the first batch (or you can choose another index)
+
+        # Convert the first image from the batch to a numpy array
+        # Assuming images are in the shape [batch_size, 1, 128, 128], so we take the first image (index 0)
+        #image = image[0].numpy()  # Convert to numpy array
+
+        # Plot the image
+        #plt.imshow(image[0], cmap='gray')  # image[0] because it's grayscale (1 channel)
+        #plt.title(f'Label: {label[0]}')  # Show the label of the first image
+        #plt.axis('off')  # Turn off axis
+        #plt.show()
+
+
+
+        testloader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False)
+        test_data = list(iter(testloader))
+
+
     else:
         raise Exception("dataset: " + str(dataset) + " not supported")
 
